@@ -175,7 +175,8 @@ class PixelWiseWeightedSliceBuilder(SliceBuilder):
 
     @staticmethod
     def _build_slices_weighted(weight_dataset, num_patches, patch_shape, dataset_shape):
-        flat_weights = np.ndarray.flatten(weight_dataset)
+        flat_weights = weight_dataset[:]
+        flat_weights = flat_weights.ravel()
         flat_weights = flat_weights / np.sum(flat_weights)
         centers = np.random.choice(range(len(flat_weights)), num_patches, p=flat_weights)
         return list(map(lambda i: PixelWiseWeightedSliceBuilder._center_to_slice(PixelWiseWeightedSliceBuilder._index_to_coordinate(i, dataset_shape), patch_shape, dataset_shape), centers))
@@ -338,10 +339,13 @@ def get_train_loaders(config):
 
     logger.info(f'Batch size for train/val loader: {batch_size}')
     # when training with volumetric data use batch_size of 1 due to GPU memory constraints
+    train_loaders = [DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+                     for dataset in train_datasets]
+    val_loaders = [DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+                   for dataset in val_datasets]
     return {
-        'train': DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True,
-                            num_workers=num_workers),
-        'val': DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        'train': train_loaders,
+        'val': val_loaders
     }
 
 
@@ -402,6 +406,6 @@ def calculate_stats(images):
     """
     # flatten first since the images might not be the same size
     flat = np.concatenate(
-        [img.ravel() for img in images]
+        [img[:] for img in images]
     )
     return np.min(flat), np.max(flat), np.mean(flat), np.std(flat)

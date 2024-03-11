@@ -146,11 +146,11 @@ class UNet3DTrainer:
     def fit(self):
         for _ in range(self.num_epoch, self.max_num_epochs):
             # train for one epoch
-            should_terminate = self.train(self.loaders['train'])
-
-            if should_terminate:
-                logger.info('Stopping criterion is satisfied. Finishing training')
-                return
+            for loader in self.loaders['train']:
+                should_terminate = self.train(loader)
+                if should_terminate:
+                    logger.info('Stopping criterion is satisfied. Finishing training')
+                    return
 
             self.num_epoch += 1
         logger.info(f"Reached maximum number of epochs: {self.max_num_epochs}. Finishing training...")
@@ -189,7 +189,7 @@ class UNet3DTrainer:
                 # set the model in eval mode
                 self.model.eval()
                 # evaluate on validation set
-                eval_score = self.validate(self.loaders['val'])
+                eval_score = self.validate()
                 # set the model back to training mode
                 self.model.train()
 
@@ -261,32 +261,33 @@ class UNet3DTrainer:
 
         return False
 
-    def validate(self, val_loader):
+    def validate(self):
         logger.info('Validating...')
 
         val_losses = utils.RunningAverage()
         val_scores = utils.RunningAverage()
 
         with torch.no_grad():
-            for i, t in enumerate(val_loader):
-                logger.info(f'Validation iteration {i}')
+            for loader in self.loaders['val']:
+                for i, t in enumerate(loader):
+                    logger.info(f'Validation iteration {i}')
 
-                input, target, weight = self._split_training_batch(t)
+                    input, target, weight = self._split_training_batch(t)
 
-                output, loss = self._forward_pass(input, target, weight)
-                val_losses.update(loss.item(), self._batch_size(input))
+                    output, loss = self._forward_pass(input, target, weight)
+                    val_losses.update(loss.item(), self._batch_size(input))
 
-                # if model contains final_activation layer for normalizing logits apply it, otherwise
-                # the evaluation metric will be incorrectly computed
-                if hasattr(self.model, 'final_activation') and self.model.final_activation is not None:
-                    output = self.model.final_activation(output)
+                    # if model contains final_activation layer for normalizing logits apply it, otherwise
+                    # the evaluation metric will be incorrectly computed
+                    if hasattr(self.model, 'final_activation') and self.model.final_activation is not None:
+                        output = self.model.final_activation(output)
 
-                eval_score = self._eval_criterion(output, target, weight)
-                val_scores.update(eval_score.item(), self._batch_size(input))
+                    eval_score = self._eval_criterion(output, target, weight)
+                    val_scores.update(eval_score.item(), self._batch_size(input))
 
-                if self.validate_iters is not None and self.validate_iters <= i:
-                    # stop validation
-                    break
+                    if self.validate_iters is not None and self.validate_iters <= i:
+                        # stop validation
+                        break
 
             self._log_stats('val', val_losses.avg, val_scores.avg)
             logger.info(f'Validation finished. Loss: {val_losses.avg}. Evaluation score: {val_scores.avg}')
