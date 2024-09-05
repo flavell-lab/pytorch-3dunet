@@ -340,8 +340,9 @@ def get_train_loaders(config):
     # when training with volumetric data use batch_size of 1 due to GPU memory constraints
     return {
         'train': DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True,
-                            num_workers=num_workers),
-        'val': DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True, num_workers=num_workers)
+                            num_workers=num_workers, pin_memory=True, pin_memory_device="cuda"),
+        'val': DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True, 
+                          num_workers=num_workers, pin_memory=True, pin_memory_device="cuda")
     }
 
 
