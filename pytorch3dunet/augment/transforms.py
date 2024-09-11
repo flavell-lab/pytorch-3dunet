@@ -1076,7 +1076,7 @@ class Transformer:
     def __init__(self, phase_config, base_config):
         self.phase_config = phase_config
         self.config_base = base_config
-        self.seed = np.random.RandomState().randint(10000000)
+        self.seed = np.random.randint(10000000)
 
     def raw_transform(self):
         return self._create_transform('raw')
@@ -1088,7 +1088,7 @@ class Transformer:
         return self._create_transform('weight')
 
     def refresh_seed(self):
-        self.seed = np.random.RandomState().randint(10000000)
+        self.seed = np.random.randint(10000000)
 
     @staticmethod
     def _transformer_class(class_name):

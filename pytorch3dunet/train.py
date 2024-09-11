@@ -6,6 +6,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+import numpy as np
+import random
+
 from pytorch3dunet.datasets.utils import get_train_loaders
 from pytorch3dunet.unet3d.config import load_config
 from pytorch3dunet.unet3d.losses import get_loss_criterion
@@ -100,6 +103,8 @@ def main():
     if manual_seed is not None:
         logger.info(f'Seed the RNG for all devices with {manual_seed}')
         torch.manual_seed(manual_seed)
+        np.random.seed(manual_seed)
+        random.seed(manual_seed)
         # see https://pytorch.org/docs/stable/notes/randomness.html
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
