@@ -176,7 +176,7 @@ class StandardPredictor(_AbstractPredictor):
                 prediction_map = prediction_map[:, z_s, y_s, x_s]
 
             logger.info(f'Saving predictions to: {output_file}/{prediction_dataset}...')
-            output_file.create_dataset(prediction_dataset, data=prediction_map, compression="gzip")
+            output_file.create_dataset(prediction_dataset, data=prediction_map) # There used to be gzip compression here, but it made it 20x slower
 
     @staticmethod
     def _validate_halo(patch_halo, slice_builder_config):
@@ -213,15 +213,15 @@ class LazyPredictor(StandardPredictor):
         # allocate datasets for probability maps
         prediction_datasets = self._get_output_dataset_names(output_heads, prefix='predictions')
         prediction_maps = [
-            output_file.create_dataset(dataset_name, shape=output_shape, dtype='float32', chunks=True,
-                                       compression='gzip')
+            output_file.create_dataset(dataset_name, shape=output_shape, dtype='float32', chunks=True, # TODO (BRIAN) - check if need f32
+                                       )
             for dataset_name in prediction_datasets]
 
         # allocate datasets for normalization masks
         normalization_datasets = self._get_output_dataset_names(output_heads, prefix='normalization')
         normalization_masks = [
             output_file.create_dataset(dataset_name, shape=output_shape, dtype='uint8', chunks=True,
-                                       compression='gzip')
+                                       )
             for dataset_name in normalization_datasets]
 
         return prediction_maps, normalization_masks
@@ -330,7 +330,7 @@ class EmbeddingsPredictor(_AbstractPredictor):
                                                                  prefix=f'segmentation/{self.clustering_name}')
             for output_segmentation, prediction_dataset in zip(output_segmentations, prediction_datasets):
                 logger.info(f'Saving predictions to: {output_file}/{prediction_dataset}...')
-                output_file.create_dataset(prediction_dataset, data=output_segmentation, compression="gzip")
+                output_file.create_dataset(prediction_dataset, data=output_segmentation)
 
     def _embeddings_to_segmentation(self, embeddings):
         """

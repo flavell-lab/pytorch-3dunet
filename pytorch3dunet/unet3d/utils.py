@@ -369,14 +369,14 @@ def expand_as_one_hot(input, C, ignore_index=None):
         # clone the src tensor and zero out ignore_index in the input
         input = input.clone()
         input[input == ignore_index] = 0
-        # scatter to get the one-hot tensor
-        result = torch.zeros(shape).to(input.device).scatter_(1, input, 1)
+        # scatter to get the one-hot tensor # Might be able to use torch.bool here, I haven't checked
+        result = torch.zeros(shape, dtype=torch.int8, device=input.device).scatter_(1, input, 1)
         # bring back the ignore_index in the result
         result[mask] = ignore_index
         return result
     else:
         # scatter to get the one-hot tensor
-        return torch.zeros(shape).to(input.device).scatter_(1, input, 1)
+        return torch.zeros(shape, dtype=torch.int8, device=input.device).scatter_(1, input, 1)
 
 
 def plot_segm(segm, ground_truth, plots_dir='.'):
